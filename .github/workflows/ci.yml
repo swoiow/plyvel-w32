@@ -1,0 +1,51 @@
+name: Build Plyvel Wheel on Windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install wheel setuptools
+
+    - name: Download and install LevelDB
+      run: |
+        curl -LO https://github.com/google/leveldb/archive/refs/tags/1.23.zip
+        tar -xf 1.23.zip
+        mkdir leveldb-build
+        cmake -S leveldb-1.23 -B leveldb-build -DCMAKE_BUILD_TYPE=Release
+        cmake --build leveldb-build --config Release
+        echo "LEVELDB_LIB=$(pwd)\\leveldb-build\\Release" >> $env:GITHUB_ENV
+        echo "LEVELDB_INCLUDE=$(pwd)\\leveldb-1.23\\include" >> $env:GITHUB_ENV
+
+    - name: Build wheel
+      env:
+        INCLUDE: ${{ env.LEVELDB_INCLUDE }}
+        LIB: ${{ env.LEVELDB_LIB }}
+      run: |
+        pip install build
+        python -m build --wheel
+
+    - name: Upload wheel artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: plyvel-wheel
+        path: dist/*.whl
