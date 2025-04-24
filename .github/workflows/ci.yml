@@ -25,7 +25,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install wheel setuptools Cython
-        pip download plyvel --no-deps --only-binary=:all: -d dist/
+        pip install plyvel
 
     - name: Upload wheel artifact
       uses: actions/upload-artifact@v4
