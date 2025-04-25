@@ -21,14 +21,31 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
+    - name: Install build tools
       run: |
         python -m pip install --upgrade pip
         pip install wheel setuptools Cython
-        pip install plyvel
+
+    - name: Clone and build LevelDB
+      run: |
+        git clone --depth=1 https://github.com/google/leveldb.git
+        cmake -S leveldb -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --config Release
+
+        echo "LEVELDB_INCLUDE=${{ github.workspace }}\\leveldb\\include" >> $env:GITHUB_ENV
+        echo "LEVELDB_LIB=${{ github.workspace }}\\build\\Release" >> $env:GITHUB_ENV
+
+    - name: Build plyvel wheel
+      env:
+        INCLUDE: ${{ env.LEVELDB_INCLUDE }}
+        LIB: ${{ env.LEVELDB_LIB }}
+      run: |
+        git clone --depth=1 https://github.com/wbolster/plyvel.git
+        cd plyvel
+        pip wheel . -w dist
 
     - name: Upload wheel artifact
       uses: actions/upload-artifact@v4
       with:
         name: plyvel-wheel
-        path: dist/*.whl
+        path: plyvel/dist/*.whl
