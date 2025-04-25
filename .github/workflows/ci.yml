@@ -13,7 +13,7 @@ jobs:
         python-version: ["3.12"]
 
     steps:
-    - name: Checkout source
+    - name: Checkout current repository
       uses: actions/checkout@v3
 
     - name: Set up Python ${{ matrix.python-version }}
@@ -26,22 +26,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install wheel setuptools Cython
 
-    - name: Clone and build LevelDB
+    - name: Clone LevelDB headers only
       run: |
         git clone --depth=1 https://github.com/google/leveldb.git
-        cmake -S leveldb -B build -DCMAKE_BUILD_TYPE=Release
-        cmake --build build --config Release
-
-        echo "LEVELDB_INCLUDE=${{ github.workspace }}\\leveldb\\include" >> $env:GITHUB_ENV
-        echo "LEVELDB_LIB=${{ github.workspace }}\\build\\Release" >> $env:GITHUB_ENV
+        mkdir C:\dummy
 
     - name: Build plyvel wheel
-      env:
-        INCLUDE: ${{ env.LEVELDB_INCLUDE }}
-        LIB: ${{ env.LEVELDB_LIB }}
+      shell: cmd
       run: |
         git clone --depth=1 https://github.com/wbolster/plyvel.git
         cd plyvel
+        set INCLUDE=${{ github.workspace }}\leveldb\include
+        set LIB=C:\dummy
         pip wheel . -w dist
 
     - name: Upload wheel artifact
