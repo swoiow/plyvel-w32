@@ -36,7 +36,7 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/wbolster/plyvel.git
         cd plyvel
-        set INCLUDE=${{ github.workspace }}\leveldb\include
+        set INCLUDE=${{ github.workspace }}\leveldb\include;%INCLUDE%
         set LIB=C:\dummy
         pip wheel . -w dist
 
